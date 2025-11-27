@@ -13,6 +13,8 @@ export class PaginationComponent {
 
   totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()));
 
+  endItem = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalItems()));
+
   pages = computed(() => {
     const total = this.totalPages();
     const current = this.currentPage();
