@@ -1,0 +1,104 @@
+<div class="space-y-8">
+  <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md flex items-center justify-between">
+      <div>
+        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Articles</div>
+        <div class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{{ totalArticles() }}</div>
+      </div>
+      <div class="flex-shrink-0 h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+        <svg class="h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+      </div>
+    </div>
+    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md flex items-center justify-between">
+      <div>
+        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Low Stock Articles</div>
+        <div class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{{ lowStockArticles() }}</div>
+      </div>
+      <div class="flex-shrink-0 h-16 w-16 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
+        <svg class="h-8 w-8 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+      </div>
+    </div>
+    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md flex items-center justify-between">
+      <div>
+        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Stock Value</div>
+        <div class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{{ totalStockValue() | number:'1.2-2' }} $</div>
+      </div>
+      <div class="flex-shrink-0 h-16 w-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+        <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Stock Overview -->
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Stock Overview</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="px-6 py-3">Article</th>
+              <th scope="col" class="px-6 py-3">Code</th>
+              <th scope="col" class="px-6 py-3">Stock</th>
+              <th scope="col" class="px-6 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of stockItems().slice(0, 10); track item.id) {
+              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ item.name }}</td>
+                <td class="px-6 py-4">{{ item.code }}</td>
+                <td class="px-6 py-4 font-bold">{{ item.stock }} {{ item.unit }}</td>
+                <td class="px-6 py-4">
+                  <span class="px-2 py-1 font-semibold leading-tight rounded-full" 
+                        [class]="getStockStatus(item).color">
+                    {{ getStockStatus(item).text }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                  <td colspan="4" class="text-center py-8 text-gray-500">No articles found.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Movements -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Recent Movements</h2>
+        <ul class="space-y-4">
+            @for(mov of articlesWithDetails(); track mov.id) {
+                <li class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 mt-1">
+                        @if (mov.type === 'Entrée') {
+                            <span class="w-8 h-8 flex items-center justify-center bg-green-100 rounded-full">
+                                <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            </span>
+                        } @else if(mov.type === 'Sortie') {
+                            <span class="w-8 h-8 flex items-center justify-center bg-red-100 rounded-full">
+                                <svg class="w-5 h-5 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+                            </span>
+                        } @else {
+                           <span class="w-8 h-8 flex items-center justify-center bg-blue-100 rounded-full">
+                                <svg class="w-5 h-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            </span>
+                        }
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ mov.type }} of {{ mov.articleName }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ mov.quantity > 0 ? '+' : '' }}{{ mov.quantity }} units on {{ mov.date | date:'shortDate' }}</p>
+                    </div>
+                </li>
+            } @empty {
+                 <li class="text-center py-8 text-gray-500">No recent movements.</li>
+            }
+        </ul>
+    </div>
+  </div>
+</div>

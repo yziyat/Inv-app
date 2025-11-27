@@ -1,0 +1,146 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+    <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Articles Management</h1>
+    @if (authService.isAdmin()) {
+      <button (click)="openModal(null)" class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+        <span>Add Article</span>
+      </button>
+    }
+  </div>
+
+  <!-- Filters -->
+  <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="md:col-span-2">
+        <label for="search" class="sr-only">Search</label>
+        <input id="search" type="text" placeholder="Search by name or code..." 
+               class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+               (input)="onSearch($event)">
+      </div>
+      <div>
+        <label for="category" class="sr-only">Category</label>
+        <select id="category" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                (change)="onCategoryChange($event)">
+          <option value="">All Categories</option>
+          @for (category of categories(); track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Articles Table -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <tr>
+            <th scope="col" class="px-6 py-3 cursor-pointer" (click)="setSort('name')">Name <span [class.opacity-50]="sortColumn() !== 'name'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span></th>
+            <th scope="col" class="px-6 py-3 cursor-pointer" (click)="setSort('code')">Code <span [class.opacity-50]="sortColumn() !== 'code'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span></th>
+            <th scope="col" class="px-6 py-3 cursor-pointer" (click)="setSort('category')">Category <span [class.opacity-50]="sortColumn() !== 'category'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span></th>
+            <th scope="col" class="px-6 py-3 cursor-pointer" (click)="setSort('price')">Price <span [class.opacity-50]="sortColumn() !== 'price'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span></th>
+            <th scope="col" class="px-6 py-3 cursor-pointer" (click)="setSort('stock')">Stock <span [class.opacity-50]="sortColumn() !== 'stock'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span></th>
+            <th scope="col" class="px-6 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (article of paginatedArticles(); track article.id) {
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+              <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ article.name }}</td>
+              <td class="px-6 py-4">{{ article.code }}</td>
+              <td class="px-6 py-4">{{ article.category }}</td>
+              <td class="px-6 py-4">{{ article.price | number:'1.2-2' }} $</td>
+              <td class="px-6 py-4">{{ article.stock }} {{ article.unit }}</td>
+              <td class="px-6 py-4 flex items-center gap-2">
+                @if (authService.isEditor()) {
+                  <button (click)="openModal(article)" class="text-blue-600 hover:text-blue-900">Edit</button>
+                }
+                @if (authService.isAdmin()) {
+                  <button (click)="openDeleteModal(article)" class="text-red-600 hover:text-red-900">Delete</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="text-center py-8 text-gray-500">No articles found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  @if(totalItems() > 0) {
+      <app-pagination
+        [currentPage]="currentPage()"
+        [totalItems]="totalItems()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPageChange($event)">
+      </app-pagination>
+  }
+</div>
+
+<!-- Add/Edit Article Modal -->
+<app-modal [title]="editingArticle() ? 'Edit Article' : 'Add New Article'" 
+           [isOpen]="isModalOpen()" 
+           (closeModal)="closeModal()">
+  <div body>
+    <form [formGroup]="articleForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+        <input type="text" id="name" formControlName="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500">
+      </div>
+      <div>
+        <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Code</label>
+        <input type="text" id="code" formControlName="code" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500">
+      </div>
+       <div>
+        <label for="modal-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+        <select id="modal-category" formControlName="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500">
+            <option value="" disabled>Select a category</option>
+            @for(cat of categories(); track cat) {
+                <option [value]="cat">{{cat}}</option>
+            }
+        </select>
+      </div>
+      <div>
+        <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
+        <input type="number" id="price" formControlName="price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500">
+      </div>
+       <div>
+        <label for="unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit</label>
+        <input type="text" id="unit" formControlName="unit" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500">
+      </div>
+      <div class="md:col-span-2">
+        <label for="alert" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Low Stock Alert</label>
+        <input type="number" id="alert" formControlName="alert" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500">
+      </div>
+      <div class="md:col-span-2">
+        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+        <textarea id="description" formControlName="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500"></textarea>
+      </div>
+    </form>
+  </div>
+  <div footer>
+    <button type="button" (click)="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+    <button type="button" (click)="saveArticle()" [disabled]="articleForm.invalid" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300">Save</button>
+  </div>
+</app-modal>
+
+<!-- Delete Confirmation Modal -->
+<app-modal title="Confirm Deletion" [isOpen]="isDeleteModalOpen()" (closeModal)="closeDeleteModal()">
+    <div body>
+        <p class="text-gray-700 dark:text-gray-300">
+            Are you sure you want to delete the article "{{ articleToDelete()?.name }}"? This action cannot be undone.
+        </p>
+    </div>
+    <div footer>
+        <button type="button" (click)="closeDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+        <button type="button" (click)="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
+    </div>
+</app-modal>
